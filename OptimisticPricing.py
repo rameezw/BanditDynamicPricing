@@ -1,9 +1,9 @@
 from __future__ import division
 import numpy as np
 from BanditPricing import *
+from argminCVX import *
 
-
-def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier):
+def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
     TODO: initialize g_bar_aggr = 0 vector
     Args:
@@ -17,6 +17,8 @@ def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier):
             prev_state (tuple): Internal bandit state from previous rounds that is required for this round
                                 (was returned as next_state in previous round).
                                 In first round, we want: prev_state = (initial_price, random_unit-vector)
+            barrier (function): the self-concordant barrier R(x) (see barrier defs file)
+            Hessian (function): the hessian of the self concordant barrier \nabla^2 R(x)
     """
     alpha = delta / s_radius
     if (alpha <= 0) or (alpha > 1) or (eta <= 0) or (delta <= 0):
@@ -44,30 +46,29 @@ def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier):
     R_prev = negRevenue(p_prev, demands_prev)
 
     #TODO: code for gradient estimate from Yang+Mohri
-    #TODO: keep track of ghats
+    #TODO: keep track of g_hats
     #g_hat =
     #g_bar =
     #g_tilde =
 
-    #TODO: use cvx to do argmin here
     g_bar_aggr += g_bar_aggr_prev + g_tilde
-    #argmin(eta*(g_bar_aggr + g_tilde)^T x + R(x) (barrier)
-    #g_bar_aggr = g_bar_1:t is sum of subgradients g_bar_s from s=1 to t
-    x_next_clean = x_prev_clean - eta * R_prev * xi_prev  # approximate gradient step.
+
+    #TODO: define r, radius of U^T(S)
+    x_next_clean = argmin(x_prev_clean, eta, xi_prev, barrier, hessian, r) # approximate gradient step.
 
     #don't need projection:
-    #Project into (1-alpha)*U^T(S) when U is orthnormal, S = ball:
-    #xnorm = np.linalg.norm(x_next_clean)
-    #if xnorm > (1 - alpha) * s_radius:
-    #    x_next_clean = (1 - alpha) * s_radius * (x_next_clean / xnorm)
+
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
 
-    #TODO: use hessian of barrier here
-    x_tilde = x_next_clean + delta * (hessian)**0.5*xi_next
+    x_tilde = x_next_clean + delta * hessian(x, r) ** 0.5 * xi_next
 
     p_tilde = findPrice(x_tilde, Uhat) #findPrice
     if np.linalg.norm(p_tilde) > s_radius:
         raise ValueError("constraints violated, norm(p_tilde)=" + str(np.linalg.norm(p_tilde)))
     next_state = (x_next_clean, Q, t + 1, update_cnts, xi_next, p_tilde, g_bar_aggr_next)
     return ((p_tilde, next_state))
+
+
+    # g_bar_aggr = g_bar_1:t is sum of subgradients g_bar_s from s=1 to t
+
