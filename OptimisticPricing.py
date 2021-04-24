@@ -18,7 +18,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
                                 (was returned as next_state in previous round).
                                 In first round, we want: prev_state = (initial_price, random_unit-vector)
             barrier (function): the self-concordant barrier R(x) (see barrier defs file)
-            Hessian (function): the hessian of the self concordant barrier \nabla^2 R(x)
+            hessian (function): the hessian of the self concordant barrier \nabla^2 R(x)
     """
     alpha = delta / s_radius
     if (alpha <= 0) or (alpha > 1) or (eta <= 0) or (delta <= 0):
@@ -49,16 +49,22 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)  # Update product-feature estimates.
     R_prev = negRevenue(p_prev, demands_prev)
 
-    #TODO: code for gradient estimate from Yang+Mohri
-    #TODO: keep track of g_hats
-    g_hat = d / delta * hessian(x_prev_clean)**0.5 * xi_prev
-    g_bar = set_g_bar()
-    g_tilde = set_g_tilde()
+    #g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
+    hat_list, g_bar_prev = g_aggr_prev
 
-    g_bar_aggr += g_bar_aggr_prev + g_tilde
+
+    g_hat = d / delta * R_prev * hessian(x_prev_clean) ** 0.5 * xi_prev)
+    hat_list.append(g_hat)
+
+    #TODO: what if k > len(g_hat)?
+    g_bar = set_g_bar(hat_list, k, d) # need to then store g_bars
+    g_tilde = set_g_tilde(hat_list, k, d)
+
+    #set g_bar_1:t
+    g_bar_aggr_t += g_bar_prev + g_bar
 
     # use cvxopt here to do argmin
-    x_next_clean = argmin(x_prev_clean, eta, xi_prev, g_bar, g_tilde) # approximate gradient step.
+    x_next_clean = argmin(x_prev_clean, eta, xi_prev, g_bar_aggr_t, g_tilde) # approximate gradient step.
 
     #don't need projection
 
@@ -66,13 +72,23 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     xi_next = randUnitVector(d) #sample UAR from sphere
 
     x_tilde = x_next_clean + delta * hessian(x_next_clean) ** 0.5 * xi_next
+    g_aggr_next = (hat_list, g_bar_aggr_t)
 
     p_tilde = findPrice(x_tilde, Uhat)
     if np.linalg.norm(p_tilde) > s_radius:
         raise ValueError("constraints violated, norm(p_tilde)=" + str(np.linalg.norm(p_tilde)))
-    next_state = (x_next_clean, Q, t + 1, update_cnts, xi_next, p_tilde, g_bar_aggr_next)
+    next_state = (x_next_clean, Q, t + 1, update_cnts, xi_next, p_tilde, g_aggr_next)
     return ((p_tilde, next_state))
 
 
-    # g_bar_aggr = g_bar_1:t is sum of subgradients g_bar_s from s=1 to t
+def set_g_bar(hat_list, k, d):
+    ans = np.zeros(d) #TODO: check dimension
+    for i in range(1, k+2):
+        ans += hat_list[-i]
+    return ans/(k+1)
 
+def set_g_tilde(hat_list,k, d):
+    ans = np.zeros(d)  # TODO: check dimension
+    for i in range(1,k+1):
+        ans += hat_list[-i]
+    return ans / (k + 1)
