@@ -1,6 +1,7 @@
 """ Bandit methods for dynamic pricing with low-rank demand variation """
 
 from __future__ import division
+from autograd import grad
 import numpy as np
 
 

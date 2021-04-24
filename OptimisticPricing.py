@@ -54,14 +54,14 @@ def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier, hessian):
     g_bar_aggr += g_bar_aggr_prev + g_tilde
 
     #TODO: define r, radius of U^T(S)
-    x_next_clean = argmin(x_prev_clean, eta, xi_prev, barrier, hessian, r) # approximate gradient step.
+    x_next_clean = argmin(x_prev_clean, eta, xi_prev, barrier) # approximate gradient step.
 
     #don't need projection:
 
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
 
-    x_tilde = x_next_clean + delta * hessian(x, r) ** 0.5 * xi_next
+    x_tilde = x_next_clean + delta * hessian(x_next_clean) ** 0.5 * xi_next
 
     p_tilde = findPrice(x_tilde, Uhat) #findPrice
     if np.linalg.norm(p_tilde) > s_radius:
