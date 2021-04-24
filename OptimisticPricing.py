@@ -3,9 +3,9 @@ import numpy as np
 from BanditPricing import *
 from argminCVX import *
 
-def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier, hessian):
+def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
-    TODO: initialize g_bar_aggr = 0 vector
+    TODO: initialize g_aggr, set k
     Args:
             demands_prev (1D array): Observed product demands at the prices p_tilde chosen by this method in the last round.
                                      Is used to calculate: R_prev = -p_tilde * demands_prev
@@ -23,9 +23,13 @@ def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier, hessian):
     alpha = delta / s_radius
     if (alpha <= 0) or (alpha > 1) or (eta <= 0) or (delta <= 0):
         raise ValueError("eta, delta, or alpha invalid")
-    x_prev_clean, Q, t, update_cnts, xi_prev, p_prev, g_bar_aggr_prev = prev_state
+
+    # read prev data
+    x_prev_clean, Q, t, update_cnts, xi_prev, p_prev, g_aggr_prev = prev_state
+
     d = x_prev_clean.shape[0]
     N = p_prev.shape[0]
+    # Q update here:
     col_ind = t % d
     cnt_ind = update_cnts[col_ind] + 1  # num times this column has been updated
     update_cnts[col_ind] = cnt_ind
@@ -38,32 +42,32 @@ def MOPOL(demands_prev, eta, delta, s_radius, prev_state, barrier, hessian):
             p_rand = s_radius * (p_rand / np.linalg.norm(p_rand))
         Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)
         x_prev_clean = np.dot(Uhat.transpose(), p_prev)  # first low-dimensional action.
-        next_state = (x_prev_clean, Q, t + 1, update_cnts, xi_prev, p_prev, g_bar_aggr_prev)
+        next_state = (x_prev_clean, Q, t + 1, update_cnts, xi_prev, p_prev, g_aggr_prev)
         return ((p_rand, next_state))
 
-    # Otherwise run our algorithm:
+    # Otherwise run our algorithm: we have xi_prev from before
     Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)  # Update product-feature estimates.
     R_prev = negRevenue(p_prev, demands_prev)
 
     #TODO: code for gradient estimate from Yang+Mohri
     #TODO: keep track of g_hats
-    #g_hat =
-    #g_bar =
-    #g_tilde =
+    g_hat = d / delta * hessian(x_prev_clean)**0.5 * xi_prev
+    g_bar = set_g_bar()
+    g_tilde = set_g_tilde()
 
     g_bar_aggr += g_bar_aggr_prev + g_tilde
 
-    #TODO: define r, radius of U^T(S)
-    x_next_clean = argmin(x_prev_clean, eta, xi_prev, barrier) # approximate gradient step.
+    # use cvxopt here to do argmin
+    x_next_clean = argmin(x_prev_clean, eta, xi_prev, g_bar, g_tilde) # approximate gradient step.
 
-    #don't need projection:
+    #don't need projection
 
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
 
     x_tilde = x_next_clean + delta * hessian(x_next_clean) ** 0.5 * xi_next
 
-    p_tilde = findPrice(x_tilde, Uhat) #findPrice
+    p_tilde = findPrice(x_tilde, Uhat)
     if np.linalg.norm(p_tilde) > s_radius:
         raise ValueError("constraints violated, norm(p_tilde)=" + str(np.linalg.norm(p_tilde)))
     next_state = (x_next_clean, Q, t + 1, update_cnts, xi_next, p_tilde, g_bar_aggr_next)
