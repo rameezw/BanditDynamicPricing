@@ -25,6 +25,7 @@ z_loc = 100.0
 V_scale = 2.0
 C = 1.0
 eigen_threshold = 10.0
+
 regret_skip = int(T / 20)  # definitely calculate regret every regret_skip rounds.
 summary_times = []  # additional rounds where regret should be computed.
 for t in range(T):
@@ -43,14 +44,20 @@ x_dists = np.zeros((num_methods, len(summary_times),
                     nrep))  # num_methods x T/regret_skip x nreps array of ||x_t - x_star|| for each method.
 revenues = np.zeros((num_methods, T, nrep))  # num_methods x T x nreps array of revenues for each method.
 
-# When reps are across same underlying stationary model:
-if sparseU:
-    U = OrthogonalSparse(N, d)
-else:
-    U = OrthogonalGaussian(N, d)  # same model for all reps.
+def generate_sim():
+    """generates U, z, V for each demand period"""
+    if sparseU:
+        U = OrthogonalSparse(N, d)
+    else:
+        U = OrthogonalGaussian(N, d)  # same model for all reps.
 
-V = forcePosDef(np.random.normal(size=d * d, scale=V_scale).reshape((d, d)), eigen_threshold)
-z = np.abs(np.random.normal(loc=z_loc, scale=z_scale, size=d))
+    V = forcePosDef(np.random.normal(size=d * d, scale=V_scale).reshape((d, d)), eigen_threshold)
+    z = np.abs(np.random.normal(loc=z_loc, scale=z_scale, size=d))
+    return U, z, V
+
+# When reps are across same underlying stationary model:
+for i in range(3): #  3 demand shocks
+
 p_star, R_star = optimalPriceFast(z_list=[z], V_list=[V], U=U, s_radius=s_radius, max_iter=1e4)
 x_star = np.dot(U.transpose(), p_star)  # optimal low-dimensional action.
 
