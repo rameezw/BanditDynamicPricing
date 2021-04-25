@@ -54,6 +54,8 @@ z = np.abs(np.random.normal(loc=z_loc, scale=z_scale, size=d))
 p_star, R_star = optimalPriceFast(z_list=[z], V_list=[V], U=U, s_radius=s_radius, max_iter=1e4)
 x_star = np.dot(U.transpose(), p_star)  # optimal low-dimensional action.
 
+#TODO: draw 3 separate periods to simulate
+
 # Run algorithms:
 for rep in range(nrep): #number of simulations
     regret_index = 0
@@ -74,6 +76,7 @@ for rep in range(nrep): #number of simulations
     R_bound = max(1.0, 1.1 * np.abs(R_star), 1.1 * upper_rev_estimate)
     Lipshitz = np.linalg.norm(np.dot(U, z)) + 2 * s_radius * np.linalg.norm(np.dot(U, np.dot(V, U.transpose())), ord=2)
     for t in range(T):
+        #TODO: if t= T/3 or 2T/3 change to next simulation environemnt
         t_touse = T
         if t == T / 3 or t == (2 * T) / 3:  # Shcoks
             init_demands = generateDemands(p_init, U, z, V, noise_std)
