@@ -11,4 +11,4 @@ def ball_barrier_r(x):
     return -1 * np.log(1 - np.linalg.norm(x)**2)
 
 def hessian_ball_r(): #need to define function in the simulation file somehow
-    return grad(grad(ball_barrier)) #hessian of f
+    return grad(grad(ball_barrier_r)) #hessian of f

@@ -5,7 +5,7 @@ from argminCVX import *
 
 def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
-    TODO: initialize g_aggr, set k
+    TODO: initialize g_aggr to be 0 vec with dim d, set k
     Args:
             demands_prev (1D array): Observed product demands at the prices p_tilde chosen by this method in the last round.
                                      Is used to calculate: R_prev = -p_tilde * demands_prev
@@ -52,21 +52,17 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     #g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
     hat_list, g_bar_prev = g_aggr_prev
 
-
-    g_hat = d / delta * R_prev * hessian(x_prev_clean) ** 0.5 * xi_prev)
+    g_hat = d / delta * R_prev * hessian(x_prev_clean) ** 0.5 * xi_prev
     hat_list.append(g_hat)
 
-    #TODO: what if k > len(g_hat)?
-    g_bar = set_g_bar(hat_list, k, d) # need to then store g_bars
-    g_tilde = set_g_tilde(hat_list, k, d)
+    g_bar = set_g_bar(hat_list, k)
+    g_tilde = set_g_tilde(hat_list, k)
 
     #set g_bar_1:t
-    g_bar_aggr_t += g_bar_prev + g_bar
+    g_bar_aggr_t = g_bar_prev + g_bar
 
     # use cvxopt here to do argmin
-    x_next_clean = argmin(x_prev_clean, eta, xi_prev, g_bar_aggr_t, g_tilde) # approximate gradient step.
-
-    #don't need projection
+    x_next_clean = argmin(x_prev_clean, eta, s_radius, g_bar_aggr_t, g_tilde) # approximate gradient step.
 
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
@@ -81,14 +77,14 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     return ((p_tilde, next_state))
 
 
-def set_g_bar(hat_list, k, d):
-    ans = np.zeros(d) #TODO: check dimension
-    for i in range(1, k+2):
-        ans += hat_list[-i]
-    return ans/(k+1)
+def set_g_bar(hat_list, k):
+    if len(hat_list) < k+1:  # if hat_list not long enough, just take avg.
+        return np.add.reduce(hat_list)
+    else:
+        return np.add.reduce(hat_list[k+2:-1]) / (k + 1)
 
-def set_g_tilde(hat_list,k, d):
-    ans = np.zeros(d)  # TODO: check dimension
-    for i in range(1,k+1):
-        ans += hat_list[-i]
-    return ans / (k + 1)
+def set_g_tilde(hat_list,k):
+    if len(hat_list) < k:  # if hat_list not long enough, just take avg.
+        return np.add.reduce(hat_list)
+    else:
+        return np.add.reduce(hat_list[k+1:-1]) / (k + 1)
