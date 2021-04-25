@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 from BanditPricing import *
 from argminCVX import *
-
+from scipy.linalg import sqrtm
 def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
     TODO: initialize g_aggr to be 0 vec with dim d, set k
@@ -52,7 +52,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     #g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
     hat_list, g_bar_prev = g_aggr_prev
 
-    g_hat = d / delta * R_prev * hessian(x_prev_clean) ** 0.5 * xi_prev
+    g_hat = d / delta * R_prev @ sqrtm(hessian(x_prev_clean)) @ xi_prev
     hat_list.append(g_hat)
 
     g_bar = set_g_bar(hat_list, k)
@@ -67,7 +67,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
 
-    x_tilde = x_next_clean + delta * hessian(x_next_clean) ** 0.5 * xi_next
+    x_tilde = x_next_clean + delta * sqrtm(hessian(x_prev_clean)) @ xi_next
     g_aggr_next = (hat_list, g_bar_aggr_t)
 
     p_tilde = findPrice(x_tilde, Uhat)

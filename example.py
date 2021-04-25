@@ -5,6 +5,8 @@ import numpy as np
 
 from BanditPricing import *
 from simulationFuncs import *
+from OptimisticPricing import *
+import barriers as br
 
 seed = 123
 np.random.seed(seed)
