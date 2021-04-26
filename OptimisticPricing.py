@@ -1,11 +1,13 @@
 from __future__ import division
+
 import numpy as np
 from BanditPricing import *
 from argminCVX import *
 from scipy.linalg import sqrtm
+
 def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
-    TODO: initialize g_aggr to be 0 vec with dim d, set k
+
     Args:
             demands_prev (1D array): Observed product demands at the prices p_tilde chosen by this method in the last round.
                                      Is used to calculate: R_prev = -p_tilde * demands_prev
@@ -74,17 +76,36 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     if np.linalg.norm(p_tilde) > s_radius:
         raise ValueError("constraints violated, norm(p_tilde)=" + str(np.linalg.norm(p_tilde)))
     next_state = (x_next_clean, Q, t + 1, update_cnts, xi_next, p_tilde, g_aggr_next)
-    return ((p_tilde, next_state))
+    return (p_tilde, next_state)
 
+
+def firstMOPOLstate(d, p_init):
+    """ Produces the initial state for the OPOL algorithm (prev_state for first round).
+
+        Args:
+            d (int): Rank of the product features to be learned.
+            p_init (1D array): Initial chosen price-vector.
+    """
+    N = p_init.shape[0]
+    Q = np.zeros((N, d))
+    x0 = np.zeros(d)
+    t0 = 0
+    update_cnts = np.zeros(d)
+    xi0 = randUnitVector(d)
+    g_aggr_0 = ([], np.zeros(d))
+
+    return ((x0, Q, t0, update_cnts, xi0, p_init, g_aggr_0))
 
 def set_g_bar(hat_list, k):
-    if len(hat_list) < k+1:  # if hat_list not long enough, just take avg.
-        return np.add.reduce(hat_list)
+    num_grads = len(hat_list)
+    if num_grads < k+1:  # if hat_list not long enough, just take avg.
+        return np.add.reduce(hat_list) / num_grads
     else:
         return np.add.reduce(hat_list[k+2:-1]) / (k + 1)
 
 def set_g_tilde(hat_list,k):
-    if len(hat_list) < k:  # if hat_list not long enough, just take avg.
-        return np.add.reduce(hat_list)
+    num_grads = len(hat_list)
+    if num_grads < k:  # if hat_list not long enough, just take avg.
+        return np.add.reduce(hat_list) / num_grads
     else:
         return np.add.reduce(hat_list[k+1:-1]) / (k + 1)

@@ -8,6 +8,8 @@ from simulationFuncs import *
 from OptimisticPricing import *
 import barriers as br
 
+#TODO: set constants for MOPOL
+
 seed = 123
 np.random.seed(seed)
 tol = 1e-10  # small numerical factor
@@ -31,7 +33,9 @@ for t in range(T):
     if ((t + 1) % regret_skip == 0) or (t == 0) or (t <= 1000 and (t + 1) % 200 == 0):
         summary_times += [t + 1]
 
-method_order = ['$\mathrm{Explo}^\mathrm{re}_\mathrm{it}$', 'GDG', 'OPOK', 'OPOL']
+#method_order = ['$\mathrm{Explo}^\mathrm{re}_\mathrm{it}$', 'GDG', 'OPOK', 'OPOL']
+method_order = ['OPOL', 'MOPOL']
+
 num_methods = len(method_order)  # Specifies which of these methods to run
 
 colors = ['black', 'blue', 'green', 'red']
@@ -83,32 +87,7 @@ for rep in range(nrep): #number of simulations
             if t > 0:
                 regret_index += 1
         for method in range(num_methods):
-            if method == 0:  # Uniformly random pricing strategy:
-                # p_t = randomPricing(N,s_radius)
-                if t > 0:
-                    p_t, expexp_state = exploreExploitPricing(revenues[method, t - 1, rep], T, s_radius, expexp_state)
-                else:
-                    p_t, expexp_state = exploreExploitPricing(init_revenue, T, s_radius,
-                                                              (np.zeros(N), np.inf, 0, np.zeros(N)))
-            elif method == 1:  # GDG pricing:
-                eta = C * s_radius / (R_bound * np.sqrt(t_touse))
-                delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) * np.sqrt(
-                    R_bound * N * np.square(s_radius) / (3 * (Lipshitz * s_radius + R_bound))))
-                if t > 0:
-                    p_t, gdg_state = GDG(revenues[method, t - 1, rep], eta, delta, s_radius, gdg_state)
-                else:
-                    p_t, gdg_state = GDG(init_revenue, eta, delta, s_radius,
-                                         (p_init, randUnitVector(N)))  # set initial state.
-            elif method == 2:  # OPOK pricing
-                eta = C * s_radius / (R_bound * np.sqrt(t_touse))
-                delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) * np.sqrt(
-                    R_bound * d * np.square(s_radius) / (3 * (Lipshitz * s_radius + R_bound))))
-                if t > 0:
-                    p_t, opok_state = OPOK(revenues[method, t - 1, rep], eta, delta, s_radius, U, opok_state)
-                else:
-                    p_t, opok_state = OPOK(init_revenue, eta, delta, s_radius, U, (
-                    np.dot(U.transpose(), p_init), randUnitVector(d), p_init))  # set initial state.
-            elif method == 3:  # OPOL pricing
+            if method == 0:  # OPOL pricing
                 eta = C * s_radius / (R_bound * np.sqrt(t_touse))
                 delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) * np.sqrt(
                     R_bound * d * np.square(s_radius) / (3 * (Lipshitz * s_radius + R_bound))))
@@ -117,6 +96,52 @@ for rep in range(nrep): #number of simulations
                 else:
                     inferred_rank = d  # run with correctly specifed rank, can change this value to see the effects of wrongly-inferred rank.
                     p_t, opol_state = OPOL(init_demands, eta, delta, s_radius, firstOPOLstate(inferred_rank, p_init))
+            elif method == 1:  # MOPOL pricing
+                barrier, hessian = br.ball_barrier_20, br.hessian_ball_20
+
+                eta = C *  np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
+                    R_bound * s_radius * np.sqrt((1 + s_radius) * (3*s_radius + 2)))
+
+                delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) *
+                            np.power(d, -1 / 2) *
+                            np.sqrt((3*s_radius + 2) * (1 + s_radius)
+                                    / ((2*s_radius + 1) ** 2)))
+                k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound *  (1+ s_radius)))
+                if t > 0:
+                    p_t, opol_state = MOPOL(opol_demand_prev, eta, delta, k,
+                                            s_radius, opol_state, barrier, hessian)
+                else:
+                    inferred_rank = d  # run with correctly specifed rank, can change this value to see the effects of wrongly-inferred rank.
+                    p_t, opol_state = MOPOL(opol_demand_prev, eta, delta, k,
+                                            s_radius, firstMOPOLstate(inferred_rank, p_init), barrier, hessian)
+
+            # OTHER UNNEEDED METHODS
+            # if method == 0:  # Uniformly random pricing strategy:
+            #     # p_t = randomPricing(N,s_radius)
+            #     if t > 0:
+            #         p_t, expexp_state = exploreExploitPricing(revenues[method, t - 1, rep], T, s_radius, expexp_state)
+            #     else:
+            #         p_t, expexp_state = exploreExploitPricing(init_revenue, T, s_radius,
+            #                                                   (np.zeros(N), np.inf, 0, np.zeros(N)))
+            # elif method == 1:  # GDG pricing:
+            #     eta = C * s_radius / (R_bound * np.sqrt(t_touse))
+            #     delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) * np.sqrt(
+            #         R_bound * N * np.square(s_radius) / (3 * (Lipshitz * s_radius + R_bound))))
+            #     if t > 0:
+            #         p_t, gdg_state = GDG(revenues[method, t - 1, rep], eta, delta, s_radius, gdg_state)
+            #     else:
+            #         p_t, gdg_state = GDG(init_revenue, eta, delta, s_radius,
+            #                              (p_init, randUnitVector(N)))  # set initial state.
+            # elif method == 2:  # OPOK pricing
+            #     eta = C * s_radius / (R_bound * np.sqrt(t_touse))
+            #     delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) * np.sqrt(
+            #         R_bound * d * np.square(s_radius) / (3 * (Lipshitz * s_radius + R_bound))))
+            #     if t > 0:
+            #         p_t, opok_state = OPOK(revenues[method, t - 1, rep], eta, delta, s_radius, U, opok_state)
+            #     else:
+            #         p_t, opok_state = OPOK(init_revenue, eta, delta, s_radius, U, (
+            #         np.dot(U.transpose(), p_init), randUnitVector(d), p_init))  # set initial state.
+
             else:
                 raise ValueError('num_methods=' + str(num_methods) + ' is too large!')
             if np.linalg.norm(p_t) > s_radius + tol:
