@@ -14,7 +14,6 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
             eta (float): Positive value.
             delta (float): Positive value. Recall, if revenue is bounded by B and L-Lipshitz and r = s_radius,
                            we want to set: eta = r/(B*sqrt(T)), delta = T^(-1/4) * sqrt((BNr^2)/(3*(Lr + B))),
-                           alpha parameter is automatically set = delta/r inside this function.
             s_radius (float): Postive radius of constraint-set, which must be centered Euclidean ball.
             prev_state (tuple): Internal bandit state from previous rounds that is required for this round
                                 (was returned as next_state in previous round).
@@ -22,9 +21,6 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
             barrier (function): the self-concordant barrier R(x) (see barrier defs file)
             hessian (function): the hessian of the self concordant barrier \nabla^2 R(x)
     """
-    alpha = delta / s_radius
-    if (alpha <= 0) or (alpha > 1) or (eta <= 0) or (delta <= 0):
-        raise ValueError("eta, delta, or alpha invalid")
 
     # read prev data
     x_prev_clean, Q, t, update_cnts, xi_prev, p_prev, g_aggr_prev = prev_state

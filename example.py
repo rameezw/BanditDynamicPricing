@@ -99,14 +99,12 @@ for rep in range(nrep): #number of simulations
             elif method == 1:  # MOPOL pricing
                 barrier, hessian = br.ball_barrier_20, br.hessian_ball_20
 
-                eta = C *  np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
+                eta = C * np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
                     R_bound * s_radius * np.sqrt((1 + s_radius) * (3*s_radius + 2)))
-
-                delta = min(0.1 * s_radius, np.power(t_touse, -1 / 4) *
-                            np.power(d, -1 / 2) *
-                            np.sqrt((3*s_radius + 2) * (1 + s_radius)
-                                    / ((2*s_radius + 1) ** 2)))
-                k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound *  (1+ s_radius)))
+                #TODO: use min here?
+                delta = np.power(t_touse, -1 / 4) * np.power(d, 1 / 2) * (
+                    np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
+                k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
                 if t > 0:
                     p_t, opol_state = MOPOL(opol_demand_prev, eta, delta, k,
                                             s_radius, opol_state, barrier, hessian)
