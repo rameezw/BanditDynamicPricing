@@ -62,7 +62,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     g_bar_aggr_t = g_bar_prev + g_bar
 
     # use cvxopt here to do argmin
-    x_next_clean = argmin(x_prev_clean, eta, s_radius, g_bar_aggr_t, g_tilde) # approximate gradient step.
+    x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d) # approximate gradient step.
 
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
