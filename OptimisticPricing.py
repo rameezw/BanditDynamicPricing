@@ -5,6 +5,7 @@ from BanditPricing import *
 from argminCVX import *
 from scipy.linalg import sqrtm
 
+
 def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
 
@@ -24,7 +25,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     # read prev data
     x_prev_clean, Q, t, update_cnts, xi_prev, p_prev, g_aggr_prev = prev_state
-
+    print(x_prev_clean)
     d = x_prev_clean.shape[0]
     N = p_prev.shape[0]
     # Q update here:
@@ -41,6 +42,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
         Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)
         x_prev_clean = np.dot(Uhat.transpose(), p_prev)  # first low-dimensional action.
         next_state = (x_prev_clean, Q, t + 1, update_cnts, xi_prev, p_prev, g_aggr_prev)
+        print('randround')
         return ((p_rand, next_state))
 
     # Otherwise run our algorithm: we have xi_prev from before
@@ -49,7 +51,11 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     #g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
     hat_list, g_bar_prev = g_aggr_prev
+    print(x_prev_clean)
+    print('blank')
+    print(hessian(x_prev_clean))
 
+    #TODO: hessian returning NaN when x is all zeros
     g_hat = d / delta * R_prev @ sqrtm(hessian(x_prev_clean)) @ xi_prev
     hat_list.append(g_hat)
 
@@ -65,7 +71,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     #setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d) #sample UAR from sphere
 
-    x_tilde = x_next_clean + delta * sqrtm(hessian(x_prev_clean)) @ xi_next
+    x_tilde = x_next_clean + delta * sqrtm(hessian(x_next_clean)) @ xi_next
     g_aggr_next = (hat_list, g_bar_aggr_t)
 
     p_tilde = findPrice(x_tilde, Uhat)
@@ -84,7 +90,7 @@ def firstMOPOLstate(d, p_init):
     """
     N = p_init.shape[0]
     Q = np.zeros((N, d))
-    x0 = np.zeros(d)
+    x0 = np.ones(d)
     t0 = 0
     update_cnts = np.zeros(d)
     xi0 = randUnitVector(d)

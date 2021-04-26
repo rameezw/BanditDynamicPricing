@@ -97,7 +97,7 @@ for rep in range(nrep): #number of simulations
                     inferred_rank = d  # run with correctly specifed rank, can change this value to see the effects of wrongly-inferred rank.
                     p_t, opol_state = OPOL(init_demands, eta, delta, s_radius, firstOPOLstate(inferred_rank, p_init))
             elif method == 1:  # MOPOL pricing
-                barrier, hessian = br.ball_barrier_20, br.hessian_ball_20
+                barrier, hessian = br.ball_barrier_20, br.hessian_ball_20()
 
                 eta = C * np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
                     R_bound * s_radius * np.sqrt((1 + s_radius) * (3*s_radius + 2)))
@@ -106,11 +106,11 @@ for rep in range(nrep): #number of simulations
                     np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
                 k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
                 if t > 0:
-                    p_t, opol_state = MOPOL(opol_demand_prev, eta, delta, k,
-                                            s_radius, opol_state, barrier, hessian)
+                    p_t, mopol_state = MOPOL(mopol_demand_prev, eta, delta, k,
+                                            s_radius, mopol_state, barrier, hessian)
                 else:
                     inferred_rank = d  # run with correctly specifed rank, can change this value to see the effects of wrongly-inferred rank.
-                    p_t, opol_state = MOPOL(opol_demand_prev, eta, delta, k,
+                    p_t, mopol_state = MOPOL(init_demands, eta, delta, k,
                                             s_radius, firstMOPOLstate(inferred_rank, p_init), barrier, hessian)
 
             # OTHER UNNEEDED METHODS
@@ -147,14 +147,12 @@ for rep in range(nrep): #number of simulations
             q_t = generateDemands(p_t, U, z, V, noise_std)  # feed in vector of observed demands here.
             revenues[method, t, rep] = negRevenue(p_t, q_t)
             x_t = np.dot(U.transpose(), p_t)
-            if method == 1:  # GDG pricing
-                gdg_revenue_prev = negRevenue(p_t, q_t)
-            if method == 3:  # OPOL pricing
+
+            if method == 0:  # OPOL pricing
                 opol_demand_prev = q_t
-            elif method == 4:
-                toobig_demand_prev = q_t
-            elif method == 5:
-                toosmall_demand_prev = q_t
+            if method == 1:  # MOPOL pricing
+                mopol_demand_prev = q_t
+
             if (t + 1) in summary_times:
                 regrets[method, regret_index, rep] = np.sum(revenues[method, :, rep]) - R_star * (
                             t + 1)  # *(t+1) only needed for stationary underlying model.
