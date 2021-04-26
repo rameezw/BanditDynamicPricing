@@ -25,7 +25,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     # read prev data
     x_prev_clean, Q, t, update_cnts, xi_prev, p_prev, g_aggr_prev = prev_state
-    print(x_prev_clean)
+
     d = x_prev_clean.shape[0]
     N = p_prev.shape[0]
     # Q update here:
