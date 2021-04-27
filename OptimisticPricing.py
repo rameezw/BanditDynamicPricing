@@ -58,14 +58,20 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     # R_prev = R_prev + np.random.normal(0, .1, R_prev.shape)
     R_prev = R_prev * np.ones((10, 10)) # to fix mul mismatch
     print(R_prev.shape)
-    print(d / delta)
-    print(xi_prev.shape)
-    print(sqrtm(hessian(x_prev_clean)).shape)
+    # print(d / delta)
+    # print(xi_prev.shape)
+    # print(sqrtm(hessian(x_prev_clean)).shape)
     # R_prev = R_prev.reshape((10, 10))
-    g_hat = (d / delta) * (R_prev @ sqrtm(hessian(x_prev_clean)) @ xi_prev)
+    g_hat = (d / delta) * R_prev @ (sqrtm(hessian(x_prev_clean)) @ xi_prev)
     print(g_hat.shape)
+    g_hat = g_hat[0]
+    g_hat = g_hat + np.random.normal(0, .1, g_hat.shape)  # fixing NaN
+    print(g_hat)
     hat_list.append(g_hat)
-
+    print(hat_list)
+    print(k)
+    k = k + 1
+    k = int(k)
     g_bar = set_g_bar(hat_list, k)
     g_tilde = set_g_tilde(hat_list, k)
 
@@ -74,7 +80,8 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     # use cvxopt here to do argmin
     x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d)  # approximate gradient step.
-
+    print(x_next_clean)
+    x_next_clean = x_next_clean + np.random.normal(0, .1, x_next_clean.shape)  # fixing NaN
     # setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d)  # sample UAR from sphere
 
@@ -103,7 +110,7 @@ def firstMOPOLstate(d, p_init):
     xi0 = randUnitVector(d)
     g_aggr_0 = ([], np.zeros(d))
 
-    return ((x0, Q, t0, update_cnts, xi0, p_init, g_aggr_0))
+    return x0, Q, t0, update_cnts, xi0, p_init, g_aggr_0
 
 
 def set_g_bar(hat_list, k):

@@ -105,6 +105,8 @@ for rep in range(nrep): #number of simulations
                 delta = np.power(t_touse, -1 / 4) * np.power(d, 1 / 2) * (
                     np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
                 k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
+                # k = np.rint(k)
+
                 if t > 0:
                     p_t, mopol_state = MOPOL(mopol_demand_prev, eta, delta, k,
                                             s_radius, mopol_state, barrier, hessian)
