@@ -51,26 +51,26 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     # g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
     hat_list, g_bar_prev = g_aggr_prev
-    print(x_prev_clean)
-    print('blank')
+    # print(x_prev_clean)
+    # print('blank')
     x_prev_clean = x_prev_clean + np.random.normal(0, .1, x_prev_clean.shape)  # fixing NaN
-    print(hessian(x_prev_clean))
+    # print(hessian(x_prev_clean))
     # R_prev = R_prev + np.random.normal(0, .1, R_prev.shape)
-    R_prev = R_prev * np.ones((10, 10)) # to fix mul mismatch
-    print(R_prev.shape)
+    R_prev = R_prev * np.ones((10, 10))  # to fix mul mismatch
+    # print(R_prev.shape)
     # print(d / delta)
     # print(xi_prev.shape)
     # print(sqrtm(hessian(x_prev_clean)).shape)
     # R_prev = R_prev.reshape((10, 10))
     g_hat = (d / delta) * R_prev @ (sqrtm(hessian(x_prev_clean)) @ xi_prev)
-    print(g_hat.shape)
+    # print(g_hat.shape)
     g_hat = g_hat[0]
     g_hat = g_hat + np.random.normal(0, .1, g_hat.shape)  # fixing NaN
-    print(g_hat)
-    hat_list.append(np.real(g_hat))   #fixed for complex
-    print(hat_list)
-    print(k)
-    k = k + 1
+    # print(g_hat)
+    hat_list.append(np.real(g_hat))  # fixed for complex
+    # print(hat_list)
+    # print(k)
+    # k = k + 1
     k = int(k)
     g_bar = set_g_bar(hat_list, k)
     g_tilde = set_g_tilde(hat_list, k)
@@ -80,7 +80,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
 
     # use cvxopt here to do argmin
     x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d)  # approximate gradient step.
-    print(x_next_clean)
+    # print(x_next_clean)
     x_next_clean = x_next_clean + np.random.normal(0, .1, x_next_clean.shape)  # fixing NaN
     # setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d)  # sample UAR from sphere
@@ -115,6 +115,8 @@ def firstMOPOLstate(d, p_init):
 
 def set_g_bar(hat_list, k):
     num_grads = len(hat_list)
+    if k < 1:
+        k = k + 1
     if num_grads < k + 1:  # if hat_list not long enough, just take avg.
         return np.add.reduce(hat_list) / num_grads
     else:
@@ -123,6 +125,8 @@ def set_g_bar(hat_list, k):
 
 def set_g_tilde(hat_list, k):
     num_grads = len(hat_list)
+    if k < 1:
+        k = k + 1
     if num_grads < k:  # if hat_list not long enough, just take avg.
         return np.add.reduce(hat_list) / num_grads
     else:
