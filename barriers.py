@@ -11,18 +11,18 @@ def ball_barrier_20(x):
     return -1 * np.log(20**2 - np.linalg.norm(x)**2)
 
 def hessian_ball_20(): #need to define function in the simulation file somehow
-    print(hessian(ball_barrier_20))
+    # print(hessian(ball_barrier_20))
     return hessian(ball_barrier_20) #hessian of f
 #TODO:
 
 def hessian(x):
-    # to fix problem with NaN hessians
-    print(x)
-    is_all_zero = np.all((x == 0))
-    if is_all_zero:
-        # perturb x
-        x = x + np.random.normal(0, .1, x.shape)
-    elif np.isnan(x):
-        x = np.where(np.isnan(x), 1, x)
-    print(x)
+    # # to fix problem with NaN hessians
+    # print(x)
+    # is_all_zero = np.all((x == 0))
+    # if is_all_zero:
+    #     # perturb x
+    #     x = x + np.random.normal(0, .1, x.shape)
+    # elif np.isnan(x):
+    #     x = np.where(np.isnan(x), 1, x)
+    # print(x)
     return hess(x, 0)

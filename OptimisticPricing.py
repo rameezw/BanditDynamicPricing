@@ -53,6 +53,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     hat_list, g_bar_prev = g_aggr_prev
     print(x_prev_clean)
     print('blank')
+    x_prev_clean = x_prev_clean + np.random.normal(0, .1, x_prev_clean.shape) #fixing NaN
     print(hessian(x_prev_clean))
 
     #TODO: hessian returning NaN when x is all zeros
