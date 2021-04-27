@@ -49,28 +49,34 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)  # Update product-feature estimates.
     R_prev = negRevenue(p_prev, demands_prev)
 
-    #g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
+    # g_aggr_prev = (list of g_hats up to t-1, g_bar_1:t-1 (sum of subgradients up to t-1)
     hat_list, g_bar_prev = g_aggr_prev
     print(x_prev_clean)
     print('blank')
-    x_prev_clean = x_prev_clean + np.random.normal(0, .1, x_prev_clean.shape) #fixing NaN
+    x_prev_clean = x_prev_clean + np.random.normal(0, .1, x_prev_clean.shape)  # fixing NaN
     print(hessian(x_prev_clean))
-
-    #TODO: hessian returning NaN when x is all zeros
-    g_hat = d / delta * R_prev @ sqrtm(hessian(x_prev_clean)) @ xi_prev
+    # R_prev = R_prev + np.random.normal(0, .1, R_prev.shape)
+    R_prev = R_prev * np.ones((10, 10)) # to fix mul mismatch
+    print(R_prev.shape)
+    print(d / delta)
+    print(xi_prev.shape)
+    print(sqrtm(hessian(x_prev_clean)).shape)
+    # R_prev = R_prev.reshape((10, 10))
+    g_hat = (d / delta) * (R_prev @ sqrtm(hessian(x_prev_clean)) @ xi_prev)
+    print(g_hat.shape)
     hat_list.append(g_hat)
 
     g_bar = set_g_bar(hat_list, k)
     g_tilde = set_g_tilde(hat_list, k)
 
-    #set g_bar_1:t
+    # set g_bar_1:t
     g_bar_aggr_t = g_bar_prev + g_bar
 
     # use cvxopt here to do argmin
-    x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d) # approximate gradient step.
+    x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d)  # approximate gradient step.
 
-    #setting up next iteration + getting prices from prev
-    xi_next = randUnitVector(d) #sample UAR from sphere
+    # setting up next iteration + getting prices from prev
+    xi_next = randUnitVector(d)  # sample UAR from sphere
 
     x_tilde = x_next_clean + delta * sqrtm(hessian(x_next_clean)) @ xi_next
     g_aggr_next = (hat_list, g_bar_aggr_t)
@@ -99,16 +105,18 @@ def firstMOPOLstate(d, p_init):
 
     return ((x0, Q, t0, update_cnts, xi0, p_init, g_aggr_0))
 
+
 def set_g_bar(hat_list, k):
     num_grads = len(hat_list)
-    if num_grads < k+1:  # if hat_list not long enough, just take avg.
+    if num_grads < k + 1:  # if hat_list not long enough, just take avg.
         return np.add.reduce(hat_list) / num_grads
     else:
-        return np.add.reduce(hat_list[k+2:-1]) / (k + 1)
+        return np.add.reduce(hat_list[k + 2:-1]) / (k + 1)
 
-def set_g_tilde(hat_list,k):
+
+def set_g_tilde(hat_list, k):
     num_grads = len(hat_list)
     if num_grads < k:  # if hat_list not long enough, just take avg.
         return np.add.reduce(hat_list) / num_grads
     else:
-        return np.add.reduce(hat_list[k+1:-1]) / (k + 1)
+        return np.add.reduce(hat_list[k + 1:-1]) / (k + 1)
