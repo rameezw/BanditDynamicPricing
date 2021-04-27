@@ -67,7 +67,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     g_hat = g_hat[0]
     g_hat = g_hat + np.random.normal(0, .1, g_hat.shape)  # fixing NaN
     print(g_hat)
-    hat_list.append(g_hat)
+    hat_list.append(np.real(g_hat))   #fixed for complex
     print(hat_list)
     print(k)
     k = k + 1
