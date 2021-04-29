@@ -53,20 +53,20 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     hat_list, g_bar_prev = g_aggr_prev
     # print(x_prev_clean)
     # print('blank')
-    x_prev_clean = x_prev_clean + np.random.normal(0, .1, x_prev_clean.shape)  # fixing NaN
+    # x_prev_clean = x_prev_clean + np.random.normal(0, 0.01, x_prev_clean.shape)  # fixing NaN
     # print(hessian(x_prev_clean))
     # R_prev = R_prev + np.random.normal(0, .1, R_prev.shape)
-    R_prev = R_prev * np.ones((10, 10))  # to fix mul mismatch
     # print(R_prev.shape)
     # print(d / delta)
     # print(xi_prev.shape)
     # print(sqrtm(hessian(x_prev_clean)).shape)
     # R_prev = R_prev.reshape((10, 10))
-    g_hat = (d / delta) * R_prev @ (sqrtm(hessian(x_prev_clean)) @ xi_prev)
-    # print(g_hat.shape)
+    # TODO: i think this algorithm cannot start at zeros(0) because of the
+    # TODO: just check for all 0s, then perturb one coordinate UAR
+    g_hat = (d / delta) * R_prev * (sqrtm(hessian(x_prev_clean)) @ xi_prev)
+    print(g_hat)
     g_hat = g_hat[0]
-    g_hat = g_hat + np.random.normal(0, .1, g_hat.shape)  # fixing NaN
-    # print(g_hat)
+    print(g_hat)
     hat_list.append(np.real(g_hat))  # fixed for complex
     # print(hat_list)
     # print(k)
@@ -78,10 +78,10 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     # set g_bar_1:t
     g_bar_aggr_t = g_bar_prev + g_bar
 
-    # use cvxopt here to do argmin
+    #argmin is from argminCVX file
     x_next_clean = argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d)  # approximate gradient step.
     # print(x_next_clean)
-    x_next_clean = x_next_clean + np.random.normal(0, .1, x_next_clean.shape)  # fixing NaN
+    x_next_clean = x_next_clean
     # setting up next iteration + getting prices from prev
     xi_next = randUnitVector(d)  # sample UAR from sphere
 
@@ -95,7 +95,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     return (p_tilde, next_state)
 
 
-def firstMOPOLstate(d, p_init):
+def firstMOPOLstate(d, p_init, k):
     """ Produces the initial state for the OPOL algorithm (prev_state for first round).
 
         Args:
@@ -108,26 +108,17 @@ def firstMOPOLstate(d, p_init):
     t0 = 0
     update_cnts = np.zeros(d)
     xi0 = randUnitVector(d)
-    g_aggr_0 = ([], np.zeros(d))
+    g_hats_init = [np.zeros(d) for i in range(k)]
+    g_aggr_0 = (g_hats_init, np.zeros(d))
 
     return x0, Q, t0, update_cnts, xi0, p_init, g_aggr_0
 
 
 def set_g_bar(hat_list, k):
-    num_grads = len(hat_list)
-    if k < 1:
-        k = k + 1
-    if num_grads < k + 1:  # if hat_list not long enough, just take avg.
-        return np.add.reduce(hat_list) / num_grads
-    else:
-        return np.add.reduce(hat_list[k + 2:-1]) / (k + 1)
+    #  note hat_list initialized with k 0s
+    return np.add.reduce(hat_list[k + 2:-1]) / (k + 1)
 
 
 def set_g_tilde(hat_list, k):
-    num_grads = len(hat_list)
-    if k < 1:
-        k = k + 1
-    if num_grads < k:  # if hat_list not long enough, just take avg.
-        return np.add.reduce(hat_list) / num_grads
-    else:
-        return np.add.reduce(hat_list[k + 1:-1]) / (k + 1)
+    #  note hat_list initialized with k 0s
+    return np.add.reduce(hat_list[k + 1:-1]) / (k + 1)
