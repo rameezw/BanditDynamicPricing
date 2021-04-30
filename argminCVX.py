@@ -15,6 +15,7 @@ def argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d, max_iter = 1e4):
                             args=(eta, barrier, g_bar_aggr_t, g_tilde),
                             constraints=cons,
                             options={'disp': True, 'maxiter': max_iter})
+    print(res['x'])
     return res['x']
 
 

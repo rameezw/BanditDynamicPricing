@@ -4,7 +4,7 @@ import numpy as np
 from BanditPricing import *
 from argminCVX import *
 from scipy.linalg import sqrtm
-
+from simulationFuncs import generateDemands
 
 def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     """ Modified Low-rank dynamic pricing with *Unknown* product features (latent U is assumed orthonormal).
@@ -43,8 +43,7 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
         x_prev_clean = np.dot(Uhat.transpose(), p_prev)  # first low-dimensional action.
         next_state = (x_prev_clean, Q, t + 1, update_cnts, xi_prev, p_prev, g_aggr_prev)
         print('randround')
-        return ((p_rand, next_state))
-
+        return (p_rand, next_state)
     # Otherwise run our algorithm: we have xi_prev from before
     Uhat, singval, right_singvec = np.linalg.svd(Q, full_matrices=False)  # Update product-feature estimates.
     R_prev = negRevenue(p_prev, demands_prev)
@@ -61,13 +60,16 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     # print(xi_prev.shape)
     # print(sqrtm(hessian(x_prev_clean)).shape)
     # R_prev = R_prev.reshape((10, 10))
-    # TODO: i think this algorithm cannot start at zeros(0) because of the
-    # TODO: just check for all 0s, then perturb one coordinate UAR
+    if np.count_nonzero(x_prev_clean) == 0:
+        # check for all 0s, then perturb
+        print('all zeros')
+        x_prev_clean += np.random.normal(0, 0.01, x_prev_clean.shape)
+    print('sqrthess', sqrtm(hessian(x_prev_clean)))
+    print('xi', xi_prev)
+
     g_hat = (d / delta) * R_prev * (sqrtm(hessian(x_prev_clean)) @ xi_prev)
-    print(g_hat)
-    g_hat = g_hat[0]
-    print(g_hat)
-    hat_list.append(np.real(g_hat))  # fixed for complex
+    print('ghat', g_hat)
+    hat_list.append(g_hat)  # fixed for complex
     # print(hat_list)
     # print(k)
     # k = k + 1

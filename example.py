@@ -8,7 +8,6 @@ from simulationFuncs import *
 from OptimisticPricing import *
 import barriers as br
 
-#TODO: set constants for MOPOL
 
 seed = 123
 np.random.seed(seed)
@@ -78,7 +77,6 @@ for rep in range(nrep): #number of simulations
     R_bound = max(1.0, 1.1 * np.abs(R_star), 1.1 * upper_rev_estimate)
     Lipshitz = np.linalg.norm(np.dot(U, z)) + 2 * s_radius * np.linalg.norm(np.dot(U, np.dot(V, U.transpose())), ord=2)
     for t in range(T):
-        init_optBCO = False
         t_touse = T
         if t == T / 3 or t == (2 * T) / 3:  # Shcoks
             init_demands = generateDemands(p_init, U, z, V, noise_std)
@@ -102,17 +100,20 @@ for rep in range(nrep): #number of simulations
 
                 eta = C * np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
                     R_bound * s_radius * np.sqrt((1 + s_radius) * (3*s_radius + 2)))
-                #TODO: fix barrier
                 delta = np.power(t_touse, -1 / 4) * np.power(d, 1 / 2) * (
                     np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
                 k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
-                # k = np.rint(k)
-                if not init_optBCO: #  one time switch
-                    if np.min(np.sum(np.abs(mopol_state[1]), axis=0)) != 0.0: init_optBCO = True
-                        # set first pt for optimisticBCO
-                        mopol_state[0] = np.randUnitVector(d) * s_radius/2
-                if t > 0:
-
+                k = int(k)
+                if t>0:
+                    print('state', mopol_state[0])
+                    print('count', type(np.count_nonzero(mopol_state[0])))
+                if (t >= d-1) and (np.count_nonzero(mopol_state[0]) == 0):
+                    # set first pt for optimisticBCO
+                    mopol_state = (randUnitVector(d) * s_radius / 2,) + mopol_state[1:]
+                    print("optBCO init", mopol_state[0])
+                    p_t, mopol_state = MOPOL(mopol_demand_prev, eta, delta, k,
+                                             s_radius, mopol_state, barrier, hessian)
+                elif t>0:
                     p_t, mopol_state = MOPOL(mopol_demand_prev, eta, delta, k,
                                             s_radius, mopol_state, barrier, hessian)
                 else:
