@@ -104,9 +104,7 @@ for rep in range(nrep): #number of simulations
                     np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
                 k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
                 k = int(k)
-                if t>0:
-                    print('state', mopol_state[0])
-                    print('count', type(np.count_nonzero(mopol_state[0])))
+
                 if (t >= d-1) and (np.count_nonzero(mopol_state[0]) == 0):
                     # set first pt for optimisticBCO
                     mopol_state = (randUnitVector(d) * s_radius / 2,) + mopol_state[1:]

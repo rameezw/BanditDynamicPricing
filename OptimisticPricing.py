@@ -64,16 +64,11 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
         # check for all 0s, then perturb
         print('all zeros')
         x_prev_clean += np.random.normal(0, 0.01, x_prev_clean.shape)
-    print('sqrthess', sqrtm(hessian(x_prev_clean)))
-    print('xi', xi_prev)
-
+    #revenue starts at 0?
     g_hat = (d / delta) * R_prev * (sqrtm(hessian(x_prev_clean)) @ xi_prev)
-    print('ghat', g_hat)
-    hat_list.append(g_hat)  # fixed for complex
-    # print(hat_list)
-    # print(k)
-    # k = k + 1
-    k = int(k)
+    if np.count_nonzero(np.imag(g_hat)) > 0: print('g_hat has complex')
+    hat_list.append(np.real(g_hat))  # fixed for complex
+
     g_bar = set_g_bar(hat_list, k)
     g_tilde = set_g_tilde(hat_list, k)
 
