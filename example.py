@@ -12,11 +12,11 @@ import barriers as br
 seed = 123
 np.random.seed(seed)
 tol = 1e-10  # small numerical factor
-nrep = 10
+nrep = 1
 N = 100  # number of products
 d = 10  # intrinsic low-rank of demand-variation, must be <= N
 s_radius = 20.0  # prices are selected within centered ball with this radius
-T = 10000  # the number of rounds (must be divisible by 10)
+T = 2000  # the number of rounds (must be divisible by 10)
 
 # Simulation parameters for stationary setting:
 sparseU = True
@@ -98,15 +98,14 @@ for rep in range(nrep): #number of simulations
             elif method == 1:  # MOPOL pricing
                 barrier, hessian = br.ball_barrier_20, br.hessian_ball_20()
 
-                eta = C * np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
+                eta = 25.0 * np.power(t_touse, -3 / 4) * np.power(d, -1 / 2) / (
                     R_bound * s_radius * np.sqrt((1 + s_radius) * (3*s_radius + 2)))
                 delta = np.power(t_touse, -1 / 4) * np.power(d, 1 / 2) * (
                     np.sqrt((3*s_radius + 2) * (1 + s_radius)/((2*s_radius + 1) ** 2)))
-                k = C * (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
+                k = (2* s_radius+ 1)/ ((3* s_radius + 2) * np.sqrt(s_radius * R_bound * (1+ s_radius)))
                 k = int(k)
-                # TODO: t= d-1?
-                if (t >= d-1) and (np.count_nonzero(mopol_state[0]) == 0):
-                    # set first pt for optimisticBCO
+                if (t == d-1) and (np.count_nonzero(mopol_state[0]) == 0):
+                    # set first pt for optimisticBCO once we are done with d rounds
                     mopol_state = (randUnitVector(d) * s_radius / 2,) + mopol_state[1:]
                     print("optBCO init", mopol_state[0])
                     p_t, mopol_state = MOPOL(mopol_demand_prev, eta, delta, k,
@@ -201,4 +200,5 @@ plt.yticks(fontsize=tickfont)
 ax = plt.gca()
 ax.yaxis.offsetText.set_fontsize(tickfont)
 plt.legend(handles=patches, loc='upper left', fontsize=labelfont)
+plt.savefig('test.png')
 plt.show()

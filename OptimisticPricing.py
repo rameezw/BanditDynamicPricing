@@ -61,10 +61,11 @@ def MOPOL(demands_prev, eta, delta, k, s_radius, prev_state, barrier, hessian):
     # R_prev = R_prev.reshape((10, 10))
     if np.count_nonzero(x_prev_clean) == 0:
         # check for all 0s, then perturb
-        print('all zeros')
+        raise ValueError('x_prev is all zeros')
         x_prev_clean += np.random.normal(0, 0.01, x_prev_clean.shape)
     g_hat = (d / delta) * R_prev * (sqrtm(hessian(x_prev_clean)) @ xi_prev)
     if np.count_nonzero(np.imag(g_hat)) > 0: print('g_hat has complex')
+
     hat_list.append(np.real(g_hat))  # fixed for complex
     g_bar = set_g_bar(hat_list, k)
     g_tilde = set_g_tilde(hat_list, k)

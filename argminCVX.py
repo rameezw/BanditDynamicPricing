@@ -17,7 +17,7 @@ def argmin(eta, s_radius, barrier, g_bar_aggr_t, g_tilde, d, max_iter = 1e4):
                             x0=randUnitVector(d)*s_radius/2,
                             args=(eta, barrier, g_bar_aggr_t, g_tilde),
                             constraints=cons,
-                            options={'disp': True, 'maxiter': max_iter})
+                            options={'disp': False, 'maxiter': max_iter})
     return res['x']
 
 
