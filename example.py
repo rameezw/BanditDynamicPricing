@@ -17,6 +17,7 @@ N = 100  # number of products
 d = 10  # intrinsic low-rank of demand-variation, must be <= N
 s_radius = 20.0  # prices are selected within centered ball with this radius
 T = 2000  # the number of rounds (must be divisible by 10)
+shocks = True  # for demand shocks
 
 # Simulation parameters for stationary setting:
 sparseU = True
@@ -78,7 +79,7 @@ for rep in range(nrep): #number of simulations
     Lipshitz = np.linalg.norm(np.dot(U, z)) + 2 * s_radius * np.linalg.norm(np.dot(U, np.dot(V, U.transpose())), ord=2)
     for t in range(T):
         t_touse = T
-        if t == T / 3 or t == (2 * T) / 3:  # Shcoks
+        if shocks and (t == int(round(T / 3)) or t == int(round((2 * T) / 3))):  # Shocks
             init_demands = generateDemands(p_init, U, z, V, noise_std)
             init_revenue = negRevenue(p_init, init_demands)
         if (t + 1) in summary_times:
